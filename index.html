@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BIN Checker & Card Details</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{max-width:680px;width:100%;background:#1a1d27;border-radius:12px;padding:32px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+h1{text-align:center;font-size:1.6rem;margin-bottom:6px;background:linear-gradient(90deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#555;font-size:.85rem;margin-bottom:24px}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:#999;text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:.95rem;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:#00d4ff}
+.row{display:flex;gap:12px}
+.row .form-group{flex:1}
+.btn{width:100%;padding:12px;background:linear-gradient(135deg,#00d4ff,#7c5cff);border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-top:6px;transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,255,.35)}
+.btn:active{transform:translateY(0)}
+.result{margin-top:24px;display:none}
+.result.show{display:block}
+.card-title{font-size:1.1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+.badge.visa{background:#1a1f71;color:#fff}
+.badge.mastercard{background:#eb001b;color:#fff}
+.badge.amex{background:#006fcf;color:#fff}
+.badge.discover{background:#ff6000;color:#fff}
+.badge.jcb{background:#0e4c96;color:#fff}
+.badge.diners{background:#0079be;color:#fff}
+.badge.unionpay{background:#e21836;color:#fff}
+.badge.elo{background:#000;color:#fff}
+.badge.mir{background:#0f4c81;color:#fff}
+.badge.default{background:#2a2d3a;color:#aaa}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.info-item{background:#0f1117;padding:10px 12px;border-radius:8px;border:1px solid #2a2d3a}
+.info-label{font-size:.7rem;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.info-value{font-size:.9rem;font-weight:600}
+.luhn{text-align:center;margin:14px 0;padding:10px;border-radius:8px;font-size:.9rem;font-weight:600}
+.luhn.ok{background:rgba(0,255,100,.1);color:#00ff64;border:1px solid rgba(0,255,100,.25)}
+.luhn.fail{background:rgba(255,60,60,.1);color:#ff3c3c;border:1px solid rgba(255,60,60,.25)}
+.copy-btn{padding:8px 14px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.75rem;cursor:pointer;margin-left:auto;white-space:nowrap}
+.copy-btn:hover{background:#3a3d4a;color:#fff}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.local-note{text-align:center;font-size:.7rem;color:#444;margin-top:14px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:#00d4ff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.copy-all{margin-top:10px;padding:10px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;width:100%;color:#00d4ff;font-size:.85rem;font-weight:600;cursor:pointer}
+.copy-all:hover{background:#2a2d3a}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>🏦 BIN Checker</h1>
+<p class="sub">Card validation + BIN lookup + full details</p>
+<div class="form-group">
+<label>Card Number</label>
+<input id="ccNum" type="text" placeholder="4111111111111111" maxlength="23" autocomplete="cc-number" oninput="onInput(this.value)">
+</div>
+<div class="row">
+<div class="form-group">
+<label>Expiry (MM/YY)</label>
+<input id="ccExp" type="text" placeholder="12/28" maxlength="5" autocomplete="cc-exp" oninput="formatExp(this.value)">
+</div>
+<div class="form-group">
+<label>CVV</label>
+<input id="ccCvc" type="text" placeholder="123" maxlength="4" autocomplete="cc-csc">
+</div>
+</div>
+<div class="form-group">
+<label>Cardholder Name</label>
+<input id="ccName" type="text" placeholder="JOHN DOE" autocomplete="cc-name">
+</div>
+<div class="form-group">
+<label>Billing Address</label>
+<input id="ccAddr" type="text" placeholder="123 Main St, Apt 4" autocomplete="street-address">
+</div>
+<div class="row">
+<div class="form-group">
+<label>City</label>
+<input id="ccCity" type="text" placeholder="New York" autocomplete="address-level2">
+</div>
+<div class="form-group">
+<label>State / Province</label>
+<input id="ccState" type="text" placeholder="NY" autocomplete="address-level1">
+</div>
+</div>
+<div class="row">
+<div class="form-group">
+<label>ZIP / Postal Code</label>
+<input id="ccZip" type="text" placeholder="10001" autocomplete="postal-code">
+</div>
+<div class="form-group">
+<label>Country</label>
+<input id="ccCountry" type="text" placeholder="US" autocomplete="country">
+</div>
+</div>
+<button class="btn" onclick="doCheck()">🔍 Check Card</button>
+<div id="result" class="result"></div>
+<button class="copy-all" onclick="copyAll()" id="copyAllBtn" style="display:none">📋 Copy All Details</button>
+<p class="local-note">Local dataset + live binlist.net API fallback. No data sent anywhere.</p>
+</div>
+<script>
+// ——— Luhn ———
+function luhnCheck(num){
+  var s=0,alt=false;
+  for(var i=num.length-1;i>=0;i--){
+    var n=parseInt(num[i],10);
+    if(alt){n*=2;if(n>9)n-=9;}
+    s+=n;alt=!alt;
+  }
+  return s%10===0;
+}
+// ——— Brand detection ———
+function detectBrand(bin){
+  var b=bin.replace(/\D/g,'');
+  if(/^4/.test(b))return{name:'Visa',short:'visa'};
+  if(/^5[1-5]/.test(b)||/^2[2-7]/.test(b))return{name:'Mastercard',short:'mastercard'};
+  if(/^3[47]/.test(b))return{name:'American Express',short:'amex'};
+  if(/^6(?:011|5)/.test(b))return{name:'Discover',short:'discover'};
+  if(/^35/.test(b))return{name:'JCB',short:'jcb'};
+  if(/^3(?:0[0-5]|[68])/.test(b))return{name:'Diners Club',short:'diners'};
+  if(/^62/.test(b))return{name:'UnionPay',short:'unionpay'};
+  if(/^(4011|4312|4389|4514|4576|504175|627780|633390|6335\d{2}|6362\d{2})/.test(b))return{name:'Elo',short:'elo'};
+  if(/^220[0-4]/.test(b))return{name:'Mir',short:'mir'};
+  return{name:'Unknown',short:'default'};
+}
+// ——— Local BIN dataset ———
+var BIN_DB={
+  '411111':{bank:'JPMorgan Chase',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '400005':{bank:'Citibank',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '426684':{bank:'Capital One',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '430945':{bank:'Chase',country:'US',countryName:'United States',currency:'USD',type:'Debit',prepaid:false},
+  '444444':{bank:'Wells Fargo',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '453201':{bank:'Bank of America',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '510510':{bank:'American Express',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '378282':{bank:'American Express',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '371449':{bank:'American Express',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '601111':{bank:'Discover',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '601100':{bank:'Discover',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '353011':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
+  '356600':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
+  '305693':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '38520000':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '6221260':{bank:'China UnionPay',country:'CN',countryName:'China',currency:'CNY',type:'Credit',prepaid:false},
+  '6228-tailed':{bank:'China UnionPay',country:'CN',countryName:'China',currency:'CNY',type:'Debit',prepaid:false},
+  '457173':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
+  '45717360':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
+  '516874':{bank:'Visa',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Debit',prepaid:false},
+  '539983':{bank:'Barclays',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Credit',prepaid:false},
+  '540668':{bank:'Barclays',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Debit',prepaid:false},
+  '475000':{bank:'Visa',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Credit',prepaid:false},
+  '402400':{bank:'Visa',country:'DE',countryName:'Germany',currency:'EUR',type:'Credit',prepaid:false},
+  '520082':{bank:'Visa',country:'DE',countryName:'Germany',currency:'EUR',type:'Debit',prepaid:false},
+  '670359':{bank:'Visa',country:'FR',countryName:'France',currency:'EUR',type:'Credit',prepaid:false},
+  '497980':{bank:'Visa',country:'FR',countryName:'France',currency:'EUR',type:'Credit',prepaid:false},
+  '537136':{bank:'Mastercard',country:'CA',countryName:'Canada',currency:'CAD',type:'Credit',prepaid:false},
+  '552094':{bank:'Mastercard',country:'CA',countryName:'Canada',currency:'CAD',type:'Debit',prepaid:false},
+  '527054':{bank:'Mastercard',country:'AU',countryName:'Australia',currency:'AUD',type:'Credit',prepaid:false},
+  '450875':{bank:'Visa',country:'AU',countryName:'Australia',currency:'AUD',type:'Debit',prepaid:false},
+  '606211':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
+  '508500':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Debit',prepaid:false},
+  '607123':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
+  '356870':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
+  '414720':{bank:'Visa',country:'IT',countryName:'Italy',currency:'EUR',type:'Credit',prepaid:false},
+  '536521':{bank:'Mastercard',country:'IT',countryName:'Italy',currency:'EUR',type:'Debit',prepaid:false},
+  '450605':{bank:'Visa',country:'ES',countryName:'Spain',currency:'EUR',type:'Credit',prepaid:false},
+  '537136':{bank:'Mastercard',country:'ES',countryName:'Spain',currency:'EUR',type:'Credit',prepaid:false},
+  '516336':{bank:'Visa',country:'NL',countryName:'Netherlands',currency:'EUR',type:'Debit',prepaid:false},
+  '528222':{bank:'Mastercard',country:'NL',countryName:'Netherlands',currency:'EUR',type:'Credit',prepaid:false},
+  '453242':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '555555':{bank:'Mastercard',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '492182':{bank:'Visa',country:'MX',countryName:'Mexico',currency:'MXN',type:'Credit',prepaid:false},
+  '537010':{bank:'Mastercard',country:'MX',countryName:'Mexico',currency:'MXN',type:'Debit',prepaid:false},
+  '541234':{bank:'Mastercard',country:'KR',countryName:'South Korea',currency:'KRW',type:'Credit',prepaid:false},
+  '457912':{bank:'Visa',country:'KR',countryName:'South Korea',currency:'KRW',type:'Debit',prepaid:false},
+  '450936':{bank:'Visa',country:'RU',countryName:'Russia',currency:'RUB',type:'Credit',prepaid:false},
+  '537956':{bank:'Mastercard',country:'RU',countryName:'Russia',currency:'RUB',type:'Debit',prepaid:false},
+  '627755':{bank:'Mir',country:'RU',countryName:'Russia',currency:'RUB',type:'Credit',prepaid:false},
+  '220020':{bank:'Mir',country:'RU',countryName:'Russia',currency:'RUB',type:'Debit',prepaid:false},
+  '606282':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
+  '508888':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Debit',prepaid:false},
+  '504175':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '636368':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Debit',prepaid:false},
+  '438935':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '401178':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false}
+};
+
+// ——— Local lookup ———
+function localLookup(bin){
+  bin=bin.replace(/\D/g,'');
+  for(var len=8;len>=6;len--){
+    var key=bin.slice(0,len);
+    if(BIN_DB[key])return BIN_DB[key];
+  }
+  return null;
+}
+
+// ——— Live API ———
+async function apiLookup(bin){
+  bin=bin.replace(/\D/g,'');
+  try{
+    var r=await fetch('https://lookup.binlist.net/'+bin.slice(0,8),{headers:{'Accept-Version':'3'}});
+    if(!r.ok)return null;
+    var d=await r.json();
+    if(!d.scheme)return null;
+    return{
+      bank:d.bank?d.bank.name:'N/A',
+      country:d.country?d.country.alpha2:'N/A',
+      countryName:d.country?d.country.name:'N/A',
+      currency:d.country?d.country.currency:'N/A',
+      type:d.type||'N/A',
+      prepaid:d.prepaid||false,
+      scheme:d.scheme||'N/A',
+      brand:d.brand||'N/A',
+      city:d.bank&&d.bank.city?d.bank.city:'N/A',
+      phone:d.bank&&d.bank.phone?d.bank.phone:'N/A',
+      bankUrl:d.bank&&d.bank.url?d.bank.url:'N/A',
+      latitude:d.country?d.country.latitude:'N/A',
+      longitude:d.country?d.country.longitude:'N/A'
+    };
+  }catch(e){return null;}
+}
+
+// ——— Format helpers ———
+function formatCardNumber(val){
+  val=val.replace(/\D/g,'').slice(0,19);
+  return val.replace(/(\d{4})/g,'$1 ').trim();
+}
+function formatExp(val){
+  val=val.replace(/\D/g,'').slice(0,4);
+  if(val.length>=3)val=val.slice(0,2)+'/'+val.slice(2);
+  return val;
+}
+function onInput(val){
+  var el=document.getElementById('ccNum');
+  var pos=el.selectionStart;
+  var before=val.replace(/\D/g,'').length;
+  el.value=formatCardNumber(val);
+  // restore cursor
+  var formatted=el.value;
+  var count=0,ns=0;
+  for(var i=0;i<formatted.length;i++){
+    if(formatted[i]!==' ')count++;
+    if(count===before){ns=i+1;break;}
+  }
+  el.setSelectionRange(ns,ns);
+}
+
+// ——— Render result ———
+function renderCard(data){
+  var el=document.getElementById('result');
+  var brand=detectBrand(data.bin);
+  var brandClass=brand.short;
+  var html='';
+  html+='<div class="card-top">';
+  html+='<div class="card-title">Card Details <span class="badge '+brandClass+'">'+brand.name+'</span></div>';
+  html+='<button class="copy-btn" onclick="copyCard()">📋 Copy Card</button>';
+  html+='</div>';
+  // Luhn
+  var luhn=luhnCheck(data.number);
+  html+='<div class="luhn '+(luhn?'ok':'fail')+'">'+(luhn?'✅ Luhn Valid':'❌ Luhn Invalid')+'</div>';
+  // Info
+  html+='<div class="info-grid">';
+  html+='<div class="info-item"><div class="info-label">Card Number</div><div class="info-value">'+formatCardNumber(data.number)+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Expiry</div><div class="info-value">'+ (document.getElementById('ccExp').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">CVV</div><div class="info-value">'+ (document.getElementById('ccCvc').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Name</div><div class="info-value">'+ (document.getElementById('ccName').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Brand</div><div class="info-value">'+ (data.brand||brand.name)+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Type</div><div class="info-value">'+ (data.type||'N/A')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Bank</div><div class="info-value">'+ (data.bank||'N/A')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Country</div><div class="info-value">'+ (data.countryName||data.country||'N/A')+' ('+ (data.country||'??')+')</div></div>';
+  html+='<div class="info-item"><div class="info-label">Currency</div><div class="info-value">'+ (data.currency||'N/A')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Prepaid</div><div class="info-value">'+ (data.prepaid?'Yes':'No')+'</div></div>';
+  if(data.city)html+='<div class="info-item"><div class="info-label">City</div><div class="info-value">'+data.city+'</div></div>';
+  if(data.phone)html+='<div class="info-item"><div class="info-label">Phone</div><div class="info-value">'+data.phone+'</div></div>';
+  if(data.bankUrl)html+='<div class="info-item"><div class="info-label">Bank URL</div><div class="info-value">'+data.bankUrl+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Address</div><div class="info-value">'+ (document.getElementById('ccAddr').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">City</div><div class="info-value">'+ (document.getElementById('ccCity').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">State</div><div class="info-value">'+ (document.getElementById('ccState').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">ZIP</div><div class="info-value">'+ (document.getElementById('ccZip').value||'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-label">Billing Country</div><div class="info-value">'+ (document.getElementById('ccCountry').value||'—')+'</div></div>';
+  html+='</div>';
+  el.innerHTML=html;
+  el.classList.add('show');
+  document.getElementById('copyAllBtn').style.display='block';
+  // store for copy
+  window._lastCardData={bin:data.bin,number:data.number,brand:brand.name,luhn:luhn,bank:data.bank||'N/A',country:data.country||'N/A',countryName:data.countryName||'N/A',currency:data.currency||'N/A',type:data.type||'N/A',prepaid:data.prepaid||false,exp:document.getElementById('ccExp').value,cvc:document.getElementById('ccCvc').value,name:document.getElementById('ccName').value,addr:document.getElementById('ccAddr').value,city:document.getElementById('ccCity').value,state:document.getElementById('ccState').value,zip:document.getElementById('ccZip').value,billingCountry:document.getElementById('ccCountry').value};
+}
+
+// ——— Main check ———
+async function doCheck(){
+  var num=document.getElementById('ccNum').value.replace(/\D/g,'');
+  if(num.length<6){document.getElementById('result').innerHTML='<p style="color:#ff3c3c;text-align:center;padding:10px">Enter at least 6 digits</p>';document.getElementById('result').classList.add('show');return;}
+  var bin=num.slice(0,8);
+  // spinner
+  var el=document.getElementById('result');
+  el.innerHTML='<p style="text-align:center;padding:10px;color:#00d4ff">Looking up BIN '+bin+'… <span class="spinner"></span></p>';
+  el.classList.add('show');
+  // local first
+  var local=localLookup(bin);
+  if(local){
+    // merge
+    local.bin=bin;
+    local.number=num;
+    local.city=local.city||'N/A';
+    local.phone=local.phone||'N/A';
+    local.bankUrl=local.bankUrl||'N/A';
+    renderCard(local);
+    return;
+  }
+  // api fallback
+  var api=await apiLookup(bin);
+  if(api){
+    api.bin=bin;
+    api.number=num;
+    renderCard(api);
+    return;
+  }
+  // no result
+  var brand=detectBrand(bin);
+  var luhn=luhnCheck(num);
+  renderCard({bin:bin,number:num,brand:brand.name,country:'??',countryName:'Unknown',bank:'N/A',currency:'N/A',type:'N/A',prepaid:false});
+}
+
+// ——— Copy ———
+function copyCard(){
+  var d=window._lastCardData;
+  if(!d)return;
+  var text='Card: '+formatCardNumber(d.number)+'\n';
+  text+='Expiry: '+(d.exp||'—')+'\n';
+  text+='CVV: '+(d.cvc||'—')+'\n';
+  text+='Name: '+(d.name||'—')+'\n';
+  text+='Brand: '+d.brand+'\n';
+  text+='Luhn: '+(d.luhn?'Valid':'Invalid')+'\n';
+  text+='Bank: '+d.bank+'\n';
+  text+='Country: '+d.countryName+' ('+d.country+')\n';
+  text+='Currency: '+d.currency+'\n';
+  text+='Type: '+d.type+'\n';
+  text+='Prepaid: '+(d.prepaid?'Yes':'No')+'\n';
+  text+='Address: '+(d.addr||'—')+'\n';
+  text+='City: '+(d.city||'—')+'\n';
+  text+='State: '+(d.state||'—')+'\n';
+  text+='ZIP: '+(d.zip||'—')+'\n';
+  text+='Billing Country: '+(d.billingCountry||'—');
+  copyToClipboard(text);
+}
+function copyAll(){
+  copyCard();
+  var btn=document.getElementById('copyAllBtn');
+  var orig=btn.textContent;
+  btn.textContent='✅ Copied!';
+  setTimeout(function(){btn.textContent=orig},2000);
+}
+function copyToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(function(){
+      var ta=document.createElement('textarea');
+      ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+      document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');}catch(e){}
+      document.body.removeChild(ta);
+    });
+  }else{
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+  }
+}
+// Enter key
+document.getElementById('ccNum').addEventListener('keydown',function(e){if(e.key==='Enter')doCheck()});
+</script>
+</body>
+</html>
