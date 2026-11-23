@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BIN Checker & Card Details</title>
+<title>🏦 BIN Checker & Card Validator</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.box{max-width:680px;width:100%;background:#1a1d27;border-radius:12px;padding:32px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-h1{text-align:center;font-size:1.6rem;margin-bottom:6px;background:linear-gradient(90deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.box{max-width:720px;width:100%;background:#1a1d27;border-radius:12px;padding:32px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+h1{text-align:center;font-size:1.8rem;background:linear-gradient(90deg,#00d4ff,#7c5cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
 .sub{text-align:center;color:#555;font-size:.85rem;margin-bottom:24px}
 .form-group{margin-bottom:14px}
 label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:#999;text-transform:uppercase;letter-spacing:.5px}
@@ -19,6 +19,9 @@ input:focus,select:focus{border-color:#00d4ff}
 .btn{width:100%;padding:12px;background:linear-gradient(135deg,#00d4ff,#7c5cff);border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-top:6px;transition:transform .15s,box-shadow .2s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,255,.35)}
 .btn:active{transform:translateY(0)}
+.btn-primary{background:linear-gradient(135deg,#00d4ff,#7c5cff)}
+.btn-secondary{background:#6c5ce7;border:none}
+.btn-tertiary{background:#00b894}
 .result{margin-top:24px;display:none}
 .result.show{display:block}
 .card-title{font-size:1.1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
@@ -42,21 +45,29 @@ input:focus,select:focus{border-color:#00d4ff}
 .luhn.fail{background:rgba(255,60,60,.1);color:#ff3c3c;border:1px solid rgba(255,60,60,.25)}
 .copy-btn{padding:8px 14px;background:#2a2d3a;border:1px solid #3a3d4a;border-radius:6px;color:#aaa;font-size:.75rem;cursor:pointer;margin-left:auto;white-space:nowrap}
 .copy-btn:hover{background:#3a3d4a;color:#fff}
-.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.local-note{text-align:center;font-size:.7rem;color:#444;margin-top:14px}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:#00d4ff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 .copy-all{margin-top:10px;padding:10px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;width:100%;color:#00d4ff;font-size:.85rem;font-weight:600;cursor:pointer}
 .copy-all:hover{background:#2a2d3a}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #444;border-top-color:#00d4ff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card-stats{margin:12px 0;font-size:.8rem;color:#444}
+.card-stats span{color:#00d4ff}
+.local-note{text-align:center;font-size:.7rem;color:#444;margin-top:14px}
+.api-test{margin-top:12px;padding:10px;border-radius:8px;background:#0a0a0f;border:1px solid #2a2d3a;font-size:.8rem}
+.api-test.success{border-color:#00ff64;color:#00ff64}
+.api-test.error{border-color:#ff3c3c;color:#ff3c3c}
+.api-test h4{margin-bottom:6px;font-size:.85rem}
+.api-test pre{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.75rem}
+@media(max-width:480px){.info-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="box">
 <h1>🏦 BIN Checker</h1>
-<p class="sub">Card validation + BIN lookup + full details</p>
+<p class="sub">Card validation + BIN lookup + live Stripe test + auto-generate</p>
 <div class="form-group">
 <label>Card Number</label>
 <input id="ccNum" type="text" placeholder="4111111111111111" maxlength="23" autocomplete="cc-number" oninput="onInput(this.value)">
+<button class="btn btn-secondary" onclick="genCard()">🎯 Gen Valid Card</button>
 </div>
 <div class="row">
 <div class="form-group">
@@ -71,6 +82,10 @@ input:focus,select:focus{border-color:#00d4ff}
 <div class="form-group">
 <label>Cardholder Name</label>
 <input id="ccName" type="text" placeholder="JOHN DOE" autocomplete="cc-name">
+</div>
+<div class="form-group">
+<label>Stripe Publishable Key (optional, for live token test)</label>
+<input id="stripeKey" type="password" placeholder="pk_test_..." autocomplete="off">
 </div>
 <div class="form-group">
 <label>Billing Address</label>
@@ -96,10 +111,11 @@ input:focus,select:focus{border-color:#00d4ff}
 <input id="ccCountry" type="text" placeholder="US" autocomplete="country">
 </div>
 </div>
-<button class="btn" onclick="doCheck()">🔍 Check Card</button>
+<button class="btn btn-primary" onclick="doCheck()">🔍 Check Card</button>
+<button class="btn btn-tertiary" onclick="testStripe()" style="margin-top:8px" id="stripeBtn">⚡ Test on Stripe</button>
 <div id="result" class="result"></div>
 <button class="copy-all" onclick="copyAll()" id="copyAllBtn" style="display:none">📋 Copy All Details</button>
-<p class="local-note">Local dataset + live binlist.net API fallback. No data sent anywhere.</p>
+<p class="local-note">Local dataset + live binlist.net API + Stripe token validation. No data leaves your browser.</p>
 </div>
 <script>
 // ——— Luhn ———
@@ -126,6 +142,48 @@ function detectBrand(bin){
   if(/^220[0-4]/.test(b))return{name:'Mir',short:'mir'};
   return{name:'Unknown',short:'default'};
 }
+// ——— Stripe test cards ———
+var STRIPE_TEST_CARDS={
+  visa:{number:'4242424242424242',exp:'12/30',cvv:'100'},
+  visa_debit:{number:'4000056655665556',exp:'12/30',cvv:'100'},
+  mastercard:{number:'5555555555554444',exp:'12/30',cvv:'100'},
+  amex:{number:'371449635398431',exp:'12/30',cvv:'1234'},
+  discover:{number:'6011111111111117',exp:'12/30',cvv:'100'},
+  jcb:{number:'3530111333300000',exp:'12/30',cvv:'100'},
+  declined:{number:'4000000000000002',exp:'12/30',cvv:'100'},
+  insufficient:{number:'4000000000009995',exp:'12/30',cvv:'100'},
+  fraud:{number:'4100000000000019',exp:'12/30',cvv:'100'},
+  processing:{number:'4242424242424242',exp:'12/30',cvv:'100'}
+};
+function genCard(){
+  // generate 15-16 digit number that passes luhn
+  var len=Math.random()>.5?16:15;
+  var num='';
+  for(var i=0;i<len-1;i++)num+=Math.floor(Math.random()*10);
+  // calculate check digit
+  var sum=0,alt=false;
+  for(var i=num.length-1;i>=0;i--){
+    var n=parseInt(num[i],10);
+    if(alt){n*=2;if(n>9)n-=9;}
+    sum+=n;alt=!alt;
+  }
+  var check=(10-sum%10)%10;
+  num+=check;
+  var brand=detectBrand(num);
+  document.getElementById('ccNum').value=num;
+  document.getElementById('ccExp').value='12/30';
+  document.getElementById('ccCvc').value='100';
+  document.getElementById('ccName').value='JOHN DOE';
+  doCheck();
+}
+function loadStripeCard(type){
+  var c=STRIPE_TEST_CARDS[type]||STRIPE_TEST_CARDS.visa;
+  document.getElementById('ccNum').value=c.number;
+  document.getElementById('ccExp').value=c.exp;
+  document.getElementById('ccCvc').value=c.cvv;
+  document.getElementById('ccName').value='JOHN DOE';
+  doCheck();
+}
 // ——— Local BIN dataset ———
 var BIN_DB={
   '411111':{bank:'JPMorgan Chase',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
@@ -144,7 +202,6 @@ var BIN_DB={
   '305693':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
   '38520000':{bank:'Diners Club',country:'US',countryName:'United States',currency:'USD',type:'Credit',prepaid:false},
   '6221260':{bank:'China UnionPay',country:'CN',countryName:'China',currency:'CNY',type:'Credit',prepaid:false},
-  '6228-tailed':{bank:'China UnionPay',country:'CN',countryName:'China',currency:'CNY',type:'Debit',prepaid:false},
   '457173':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
   '45717360':{bank:'Jyske Bank',country:'DK',countryName:'Denmark',currency:'DKK',type:'Debit',prepaid:false},
   '516874':{bank:'Visa',country:'GB',countryName:'United Kingdom',currency:'GBP',type:'Debit',prepaid:false},
@@ -161,32 +218,11 @@ var BIN_DB={
   '450875':{bank:'Visa',country:'AU',countryName:'Australia',currency:'AUD',type:'Debit',prepaid:false},
   '606211':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
   '508500':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Debit',prepaid:false},
-  '607123':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
-  '356870':{bank:'JCB',country:'JP',countryName:'Japan',currency:'JPY',type:'Credit',prepaid:false},
-  '414720':{bank:'Visa',country:'IT',countryName:'Italy',currency:'EUR',type:'Credit',prepaid:false},
-  '536521':{bank:'Mastercard',country:'IT',countryName:'Italy',currency:'EUR',type:'Debit',prepaid:false},
-  '450605':{bank:'Visa',country:'ES',countryName:'Spain',currency:'EUR',type:'Credit',prepaid:false},
-  '537136':{bank:'Mastercard',country:'ES',countryName:'Spain',currency:'EUR',type:'Credit',prepaid:false},
-  '516336':{bank:'Visa',country:'NL',countryName:'Netherlands',currency:'EUR',type:'Debit',prepaid:false},
-  '528222':{bank:'Mastercard',country:'NL',countryName:'Netherlands',currency:'EUR',type:'Credit',prepaid:false},
-  '453242':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
-  '555555':{bank:'Mastercard',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
-  '492182':{bank:'Visa',country:'MX',countryName:'Mexico',currency:'MXN',type:'Credit',prepaid:false},
-  '537010':{bank:'Mastercard',country:'MX',countryName:'Mexico',currency:'MXN',type:'Debit',prepaid:false},
-  '541234':{bank:'Mastercard',country:'KR',countryName:'South Korea',currency:'KRW',type:'Credit',prepaid:false},
-  '457912':{bank:'Visa',country:'KR',countryName:'South Korea',currency:'KRW',type:'Debit',prepaid:false},
-  '450936':{bank:'Visa',country:'RU',countryName:'Russia',currency:'RUB',type:'Credit',prepaid:false},
-  '537956':{bank:'Mastercard',country:'RU',countryName:'Russia',currency:'RUB',type:'Debit',prepaid:false},
-  '627755':{bank:'Mir',country:'RU',countryName:'Russia',currency:'RUB',type:'Credit',prepaid:false},
-  '220020':{bank:'Mir',country:'RU',countryName:'Russia',currency:'RUB',type:'Debit',prepaid:false},
-  '606282':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Credit',prepaid:false},
-  '508888':{bank:'RuPay',country:'IN',countryName:'India',currency:'INR',type:'Debit',prepaid:false},
   '504175':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
   '636368':{bank:'Elo',country:'BR',countryName:'Brazil',currency:'BRL',type:'Debit',prepaid:false},
   '438935':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false},
   '401178':{bank:'Visa',country:'BR',countryName:'Brazil',currency:'BRL',type:'Credit',prepaid:false}
 };
-
 // ——— Local lookup ———
 function localLookup(bin){
   bin=bin.replace(/\D/g,'');
@@ -196,7 +232,6 @@ function localLookup(bin){
   }
   return null;
 }
-
 // ——— Live API ———
 async function apiLookup(bin){
   bin=bin.replace(/\D/g,'');
@@ -216,13 +251,10 @@ async function apiLookup(bin){
       brand:d.brand||'N/A',
       city:d.bank&&d.bank.city?d.bank.city:'N/A',
       phone:d.bank&&d.bank.phone?d.bank.phone:'N/A',
-      bankUrl:d.bank&&d.bank.url?d.bank.url:'N/A',
-      latitude:d.country?d.country.latitude:'N/A',
-      longitude:d.country?d.country.longitude:'N/A'
+      bankUrl:d.bank&&d.bank.url?d.bank.url:'N/A'
     };
   }catch(e){return null;}
 }
-
 // ——— Format helpers ———
 function formatCardNumber(val){
   val=val.replace(/\D/g,'').slice(0,19);
@@ -247,7 +279,6 @@ function onInput(val){
   }
   el.setSelectionRange(ns,ns);
 }
-
 // ——— Render result ———
 function renderCard(data){
   var el=document.getElementById('result');
@@ -288,7 +319,6 @@ function renderCard(data){
   // store for copy
   window._lastCardData={bin:data.bin,number:data.number,brand:brand.name,luhn:luhn,bank:data.bank||'N/A',country:data.country||'N/A',countryName:data.countryName||'N/A',currency:data.currency||'N/A',type:data.type||'N/A',prepaid:data.prepaid||false,exp:document.getElementById('ccExp').value,cvc:document.getElementById('ccCvc').value,name:document.getElementById('ccName').value,addr:document.getElementById('ccAddr').value,city:document.getElementById('ccCity').value,state:document.getElementById('ccState').value,zip:document.getElementById('ccZip').value,billingCountry:document.getElementById('ccCountry').value};
 }
-
 // ——— Main check ———
 async function doCheck(){
   var num=document.getElementById('ccNum').value.replace(/\D/g,'');
@@ -301,7 +331,6 @@ async function doCheck(){
   // local first
   var local=localLookup(bin);
   if(local){
-    // merge
     local.bin=bin;
     local.number=num;
     local.city=local.city||'N/A';
@@ -318,12 +347,46 @@ async function doCheck(){
     renderCard(api);
     return;
   }
-  // no result
+  // no result - show what we have
   var brand=detectBrand(bin);
   var luhn=luhnCheck(num);
   renderCard({bin:bin,number:num,brand:brand.name,country:'??',countryName:'Unknown',bank:'N/A',currency:'N/A',type:'N/A',prepaid:false});
 }
-
+// ——— Stripe token test ———
+async function testStripe(){
+  var key=document.getElementById('stripeKey').value.trim();
+  var num=document.getElementById('ccNum').value.replace(/\D/g,'');
+  var exp=document.getElementById('ccExp').value.replace('/','');
+  var cvv=document.getElementById('ccCvc').value;
+  if(!key){alert('Enter your Stripe publishable key (pk_test_...)');return;}
+  if(num.length<12){alert('Card number too short');return;}
+  var btn=document.getElementById('stripeBtn');
+  var orig=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='⚡ Testing… <span class="spinner"></span>';
+  // Try Stripe token generation
+  var data= 'card[number]='+num+'&card[cvc]='+cvv+'&card[exp_month]='+exp.slice(0,2)+'&card[exp_year]='+exp.slice(2)+'&key='+key;
+  try{
+    var r=await fetch('https://api.stripe.com/v1/tokens',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:data
+    });
+    var j=await r.json();
+    var html='<div class="api-test '+(j.error?'error':'success')+'">';
+    html+='<h4>Stripe Token Result</h4>';
+    if(j.error)html+='<pre>'+j.error.type+': '+j.error.message+'</pre>';
+    else html+='<pre>Token: '+j.id+'\nCard: '+j.card.brand+' '+j.card.last4+'\nFunding: '+j.card.funding+'\nCountry: '+j.card.country+'</pre>';
+    html+='</div>';
+    document.getElementById('result').innerHTML+=html;
+  }catch(e){
+    var html='<div class="api-test error"><h4>Stripe Test Error</h4><pre>'+e.message+'</pre></div>';
+    document.getElementById('result').innerHTML+=html;
+  }finally{
+    btn.disabled=false;
+    btn.textContent=orig;
+  }
+}
 // ——— Copy ———
 function copyCard(){
   var d=window._lastCardData;
